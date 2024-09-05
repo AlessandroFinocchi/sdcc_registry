@@ -3,7 +3,7 @@ module sdcc_registry
 go 1.21.6
 
 require (
-	github.com/AlessandroFinocchi/sdcc_common v1.0.0
+	github.com/AlessandroFinocchi/sdcc_common v1.1.0
 	google.golang.org/grpc v1.66.0
 )
 

@@ -4,12 +4,13 @@ import (
 	"flag"
 	"fmt"
 	"github.com/AlessandroFinocchi/sdcc_common/pb"
-	"github.com/AlessandroFinocchi/sdcc_common/utils"
+	u "github.com/AlessandroFinocchi/sdcc_common/utils"
 	"log"
 	"net"
 	"os"
 	m "sdcc_registry/model"
 	s "sdcc_registry/services"
+	ur "sdcc_registry/utils"
 	"sync"
 	"time"
 
@@ -28,7 +29,7 @@ func main() {
 
 	nodeListW := m.NewNodeListWrapper()
 	nodeListMutex := &sync.Mutex{}
-	timeoutDuration, err := utils.ReadConfigUInt64("config.ini", "heartbeat", "timeout_duration")
+	timeoutDuration, err := u.ReadConfigUInt64("config.ini", "heartbeat", "timeout_duration")
 	if err != nil {
 		log.Fatalf("failed to read timeout duration: %v", err)
 	}
@@ -45,11 +46,10 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	tlsCredentials, err := utils.LoadServerTLSCredentials()
+	tlsCredentials, err := ur.LoadServerTLSCredentials()
 	if err != nil {
 		log.Fatalf("cannot load TLS credentials: %w")
 	}
-
 	serverOptions := []grpc.ServerOption{grpc.Creds(tlsCredentials)}
 
 	// Create new gRPC server instance by calling gRPC Go APIs
