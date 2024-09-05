@@ -14,4 +14,4 @@ EXPOSE 50501
 
 RUN go build -o /sdcc_registry
 
-ENTRYPOINT ["./sdcc_registry"]
+ENTRYPOINT ["/sdcc_registry"]
