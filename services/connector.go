@@ -7,7 +7,10 @@ import (
 	"github.com/AlessandroFinocchi/sdcc_common/utils"
 	"log"
 	"math/rand"
+	"os"
 	m "sdcc_registry/model"
+	ur "sdcc_registry/utils"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -17,18 +20,21 @@ type Connector struct {
 	Mutex  *sync.Mutex
 	NodesW *m.NodeListWrapper
 	c      uint64
+	logger ur.MyLogger
 }
 
 func NewConnector(mutex *sync.Mutex, nodesW *m.NodeListWrapper) *Connector {
 	membershipNodesNumber, err := utils.ReadConfigUInt64("config.ini", "membership", "c")
-	if err != nil {
-		log.Fatalf("Could not read c from config file: %v", err)
+	logging, errL := strconv.ParseBool(os.Getenv(ur.LoggingEnv))
+	if err != nil || errL != nil {
+		log.Fatalf("Could not read configuration in connector: %v", err)
 	}
 
 	return &Connector{
 		Mutex:  mutex,
 		NodesW: nodesW,
 		c:      membershipNodesNumber,
+		logger: ur.NewMyLogger(logging),
 	}
 }
 
@@ -62,12 +68,12 @@ func (c *Connector) Connect(ctx context.Context, in *pb.Node) (*pb.NodeList, err
 	sendingNodes, err := c.getNodes(ctx)
 
 	if err != nil {
-		fmt.Printf("Could not get nodes to send: %v\n", err)
+		c.logger.Log(fmt.Sprintf("Could not get nodes to send: %v\n", err))
 	}
 
 	c.NodesW.Add(in)
 
-	fmt.Println("Connected to ", in.GetId(), ":", in.GetMembershipIp(), ":", in.GetMembershipPort())
+	c.logger.Log(fmt.Sprintf("Connected to %s:%s:%d", in.GetId(), in.GetMembershipIp(), in.GetMembershipPort()))
 	return sendingNodes, nil
 }
 
@@ -81,6 +87,6 @@ func (c *Connector) Disconnect(ctx context.Context, in *pb.Node) (*pb.Empty, err
 
 	c.NodesW.Remove(in.GetId())
 
-	fmt.Println("Disconnected from ", in.GetId(), ":", in.GetMembershipIp(), ":", in.GetMembershipPort())
+	c.logger.Log(fmt.Sprintf("Disconnected from %s:%s:%d", in.GetId(), in.GetMembershipIp(), in.GetMembershipPort()))
 	return nil, nil
 }

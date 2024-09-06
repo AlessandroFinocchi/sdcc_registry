@@ -1,7 +1,6 @@
 package model
 
 import (
-	"fmt"
 	"github.com/AlessandroFinocchi/sdcc_common/pb"
 )
 
@@ -35,7 +34,6 @@ func (n *NodeListWrapper) Remove(id string) {
 }
 
 func (n *NodeListWrapper) Add(node *pb.Node) {
-	fmt.Println("Adding node " + node.GetId())
 	// Add node to the map
 	n.NodeMap[node.Id] = &RegistryNode{
 		Node: pb.Node{

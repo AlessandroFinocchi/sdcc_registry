@@ -6,7 +6,10 @@ import (
 	"github.com/AlessandroFinocchi/sdcc_common/pb"
 	"github.com/AlessandroFinocchi/sdcc_common/utils"
 	"log"
+	"os"
 	m "sdcc_registry/model"
+	ur "sdcc_registry/utils"
+	"strconv"
 	"sync"
 )
 
@@ -16,18 +19,21 @@ type Heartbeat struct {
 	NodesW          *m.NodeListWrapper
 	cycles          uint64
 	cyclesThreshold uint64
+	logger          ur.MyLogger
 }
 
 func NewHeartbeat(mutex *sync.Mutex, nodesW *m.NodeListWrapper) *Heartbeat {
 	cyclesThreshold, err := utils.ReadConfigUInt64("config.ini", "heartbeat", "cycles_threshold")
-	if err != nil {
-		log.Fatalf("Could not read cycles_threshold from config file: %v", err)
+	logging, errL := strconv.ParseBool(os.Getenv(ur.LoggingEnv))
+	if err != nil || errL != nil {
+		log.Fatalf("Could not read configuration in heartbeat: %v", err)
 	}
 	return &Heartbeat{
 		Mutex:           mutex,
 		NodesW:          nodesW,
 		cycles:          0,
 		cyclesThreshold: cyclesThreshold,
+		logger:          ur.NewMyLogger(logging),
 	}
 }
 
@@ -39,7 +45,7 @@ func (h *Heartbeat) Beat(ctx context.Context, node *pb.Node) (*pb.Empty, error) 
 		return nil, err
 	}
 
-	fmt.Println("Beat from node " + node.GetId())
+	h.logger.Log(fmt.Sprintf("Beat from node %s", node.GetId()))
 
 	if _, ok := h.NodesW.NodeMap[node.GetId()]; !ok {
 		h.NodesW.Add(node)
@@ -59,14 +65,14 @@ func (h *Heartbeat) OnTimeout() {
 
 	for _, node := range h.NodesW.NodeMap {
 		if h.cycles-node.LastUpdated > h.cyclesThreshold {
-			fmt.Println("Node " + node.GetId() + " has timed out.")
+			h.logger.Log(fmt.Sprintf("Node %s has timed out.", node.GetId()))
 			h.NodesW.Remove(node.GetId())
 		}
 	}
 
-	fmt.Println("Remaining nodes:")
+	h.logger.Log("Remaining nodes:")
 	for _, node := range h.NodesW.NodeList {
-		fmt.Println(node.GetId(), ": ", node.GetMembershipIp(), ":", node.GetMembershipPort())
+		h.logger.Log(fmt.Sprintf("%s: %s:%d", node.GetId(), node.GetMembershipIp(), node.GetMembershipPort()))
 	}
-	fmt.Println()
+	h.logger.Log("")
 }
