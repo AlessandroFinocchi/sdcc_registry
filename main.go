@@ -55,6 +55,7 @@ func main() {
 	// Create new gRPC server instance by calling gRPC Go APIs
 	registry := grpc.NewServer(serverOptions...)
 
+	// Register services
 	pb.RegisterConnectorServer(registry, connectorService)
 	pb.RegisterHeartbeatServer(registry, heartbeatService)
 	fmt.Printf("server listening at %v", lis.Addr())
